@@ -74,107 +74,123 @@ async function setupVideo() {
 
 setupVideo();
 
-// OBJファイルのパス
-const objFilePath = './models/143.obj';
-
-// フォントローダーを作成
-const fontLoader = new FontLoader();
-
-// オブジェクトの中心座標を格納する変数
-let objectCenter = new THREE.Vector3();
+// JSONファイルを読み込む関数
+async function loadJSON(url) {
+  const response = await fetch(url);
+  return response.json();
+}
 
 // オブジェクトを格納するグループを作成
 let objGroup = new THREE.Group();
 scene.add(objGroup);
 
+// フォントローダーを作成
+const fontLoader = new FontLoader();
+
 // フォントを読み込む
 fontLoader.load(
   '/fonts/helvetiker_regular.typeface.json',
-  function (font) {
-    // ファイル名を取得
-    const fileName = objFilePath.split('/').pop();
+  async function (font) {
+    try {
+      // JSONファイルを読み込む
+      const jsonData = await loadJSON('/nfts/nft_metadata/143.json');
 
-    // OBJローダーを作成
-    const loader = new OBJLoader();
+      // OBJファイルのパスを取得
+      const objFilePath = jsonData.model_path;
 
-    // OBJファイルを読み込む
-    loader.load(
-      objFilePath,
-      function (object) {
-        // 読み込み完了時の処理
+      // OBJローダーを作成
+      const loader = new OBJLoader();
 
-        // オブジェクトのバウンディングボックスを計算
-        const box = new THREE.Box3().setFromObject(object);
-        const size = box.getSize(new THREE.Vector3());
-        const objectCenter = box.getCenter(new THREE.Vector3());
+      // OBJファイルを読み込む
+      loader.load(
+        objFilePath,
+        function (object) {
+          // 読み込み完了時の処理
 
-        // オブジェクトの位置を調整してセンタリング
-        object.position.sub(objectCenter);
+          // オブジェクトのバウンディングボックスを計算
+          const box = new THREE.Box3().setFromObject(object);
+          const size = box.getSize(new THREE.Vector3());
+          const objectCenter = box.getCenter(new THREE.Vector3());
 
-        // オブジェクトのマテリアルをワイヤーフレームに変更
-        object.traverse(function (child) {
-          if (child instanceof THREE.Mesh) {
-            child.material = new THREE.MeshBasicMaterial({
-              color: 0xffffff,  // 白色
-              wireframe: true,  // ワイヤーフレーム表示を有効化
-              wireframeLinewidth: 1
-            });
-          }
-        });
+          // オブジェクトの位置を調整してセンタリング
+          object.position.sub(objectCenter);
 
-        // オブジェクトをグループに追加
-        objGroup.add(object);
+          // オブジェクトのマテリアルをワイヤーフレームに変更
+          object.traverse(function (child) {
+            if (child instanceof THREE.Mesh) {
+              child.material = new THREE.MeshBasicMaterial({
+                color: 0xffffff,  // 白色
+                wireframe: true,  // ワイヤーフレーム表示を有効化
+                wireframeLinewidth: 1
+              });
+            }
+          });
 
-        // オブジェクトのスケールを調整
-        const scale = 0.5 / Math.max(size.x, size.y, size.z);
-        objGroup.scale.set(scale, scale, scale);
+          // オブジェクトをグループに追加
+          objGroup.add(object);
 
-        // オブジェクトの位置を調整
-        objGroup.position.z = 0.5;
+          // オブジェクトのスケールを調整
+          const scale = 0.5 / Math.max(size.x, size.y, size.z);
+          objGroup.scale.set(scale, scale, scale);
 
-        console.log('3D object loaded and set to wireframe');
+          // オブジェクトの位置を調整
+          objGroup.position.z = 0.5;
 
-        // 線を描画
-        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(0, 0, 0),
-          new THREE.Vector3(-0.35, 0.45, -0.5)
-        ]);
-        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-        const line = new THREE.Line(lineGeometry, lineMaterial);
-        scene.add(line);  // 線を直接シーンに追加
+          console.log('3D object loaded and set to wireframe');
 
-        // テキストジオメトリを作成
-        const textGeometry = new TextGeometry(fileName, {
-          font: font,
-          size: 0.05,
-          depth: 0.01,  // .heightの代わりに.depthを使用
-          curveSegments: 12,
-          bevelEnabled: false
-        });
+          // 線を描画
+          const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(-0.15, 0.20, -0.5)
+          ]);
+          const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+          const line = new THREE.Line(lineGeometry, lineMaterial);
+          scene.add(line);  // 線を直接シーンに追加
 
-        // テキストマテリアルを作成
-        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+          // テキスト内容を生成
+          const textContent = `ID: ${jsonData.ID}
+ParentID: ${jsonData.parentID}
+Name: ${jsonData.name}
+Description: ${jsonData.description}
+Productor: ${jsonData.productor}
+Date: ${jsonData.date}
+Site: ${jsonData.site}`;
 
-        // テキストメッシュを作成
-        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+          // テキストジオメトリを作成
+          const textGeometry = new TextGeometry(textContent, {
+            font: font,
+            size: 0.03,
+            depth: 0.01,
+            curveSegments: 12,
+            bevelEnabled: false
+          });
 
-        // テキストの位置を設定
-        textMesh.position.set(-0.45, 0.45, -0.5);
+          // テキストマテリアルを作成
+          const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        // テキストをシーンに追加
-        scene.add(textMesh);
+          // テキストメッシュを作成
+          const textMesh = new THREE.Mesh(textGeometry, textMaterial);
 
-        console.log('Line and text added to scene');
-      },
-      function (xhr) {
-        // 読み込み進捗時の処理
-        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-      },
-      function (error) {
-        // エラー時の処理
-        console.error('An error happened', error);
-      }
-    );
+          // テキストの位置を設定
+          textMesh.position.set(-0.45, 0.45, -0.5);
+
+          // テキストをシーンに追加
+          scene.add(textMesh);
+
+          console.log('Line and text added to scene');
+        },
+        function (xhr) {
+          // 読み込み進捗時の処理
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+        },
+        function (error) {
+          // エラー時の処理
+          console.error('An error happened', error);
+        }
+      );
+    } catch (error) {
+      console.error('Error loading JSON:', error);
+    }
   }
 );
 
