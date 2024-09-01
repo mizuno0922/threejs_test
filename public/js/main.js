@@ -80,88 +80,101 @@ const objFilePath = './models/143.obj';
 // フォントローダーを作成
 const fontLoader = new FontLoader();
 
+// オブジェクトの中心座標を格納する変数
+let objectCenter = new THREE.Vector3();
+
+// オブジェクトを格納するグループを作成
+let objGroup = new THREE.Group();
+scene.add(objGroup);
+
 // フォントを読み込む
 fontLoader.load(
-  '/fonts/helvetiker_regular.typeface.json',  // ローカルのフォントファイルへのパスに変更
+  '/fonts/helvetiker_regular.typeface.json',
   function (font) {
     // ファイル名を取得
     const fileName = objFilePath.split('/').pop();
 
-    // テキストジオメトリを作成
-    const textGeometry = new TextGeometry(fileName, {
-      font: font,
-      size: 0.1,
-      height: 0.02,
-      curveSegments: 12,
-      bevelEnabled: false
-    });
+    // OBJローダーを作成
+    const loader = new OBJLoader();
 
-    // テキストマテリアルを作成
-    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // OBJファイルを読み込む
+    loader.load(
+      objFilePath,
+      function (object) {
+        // 読み込み完了時の処理
 
-    // テキストメッシュを作成
-    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+        // オブジェクトのバウンディングボックスを計算
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const objectCenter = box.getCenter(new THREE.Vector3());
 
-    // テキストの位置を設定（左上）
-    textMesh.position.set(-0.95, 0.85, -0.5);
+        // オブジェクトの位置を調整してセンタリング
+        object.position.sub(objectCenter);
 
-    // テキストをシーンに追加
-    scene.add(textMesh);
-
-    console.log('Text mesh added to scene');
-  }
-);
-
-// OBJローダーを作成
-const loader = new OBJLoader();
-
-let objGroup = new THREE.Group();  // オブジェクトを格納するグループを作成
-scene.add(objGroup);  // グループをシーンに追加
-
-// OBJファイルを読み込む
-loader.load(
-  objFilePath,
-  function (object) {
-    // 読み込み完了時の処理
-
-    // オブジェクトのバウンディングボックスを計算
-    const box = new THREE.Box3().setFromObject(object);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-
-    // オブジェクトの位置を調整してセンタリング
-    object.position.sub(center);
-
-    // オブジェクトのマテリアルをワイヤーフレームに変更
-    object.traverse(function (child) {
-      if (child instanceof THREE.Mesh) {
-        child.material = new THREE.MeshBasicMaterial({
-          color: 0xffffff,  // 白色
-          wireframe: true,  // ワイヤーフレーム表示を有効化
-          wireframeLinewidth: 1  // 線の太さ（一部のレンダラーでは効果がない場合があります）
+        // オブジェクトのマテリアルをワイヤーフレームに変更
+        object.traverse(function (child) {
+          if (child instanceof THREE.Mesh) {
+            child.material = new THREE.MeshBasicMaterial({
+              color: 0xffffff,  // 白色
+              wireframe: true,  // ワイヤーフレーム表示を有効化
+              wireframeLinewidth: 1
+            });
+          }
         });
+
+        // オブジェクトをグループに追加
+        objGroup.add(object);
+
+        // オブジェクトのスケールを調整
+        const scale = 0.5 / Math.max(size.x, size.y, size.z);
+        objGroup.scale.set(scale, scale, scale);
+
+        // オブジェクトの位置を調整
+        objGroup.position.z = 0.5;
+
+        console.log('3D object loaded and set to wireframe');
+
+        // 線を描画
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(-0.35, 0.45, -0.5)
+        ]);
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(line);  // 線を直接シーンに追加
+
+        // テキストジオメトリを作成
+        const textGeometry = new TextGeometry(fileName, {
+          font: font,
+          size: 0.05,
+          depth: 0.01,  // .heightの代わりに.depthを使用
+          curveSegments: 12,
+          bevelEnabled: false
+        });
+
+        // テキストマテリアルを作成
+        const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+        // テキストメッシュを作成
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+        // テキストの位置を設定
+        textMesh.position.set(-0.45, 0.45, -0.5);
+
+        // テキストをシーンに追加
+        scene.add(textMesh);
+
+        console.log('Line and text added to scene');
+      },
+      function (xhr) {
+        // 読み込み進捗時の処理
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+      },
+      function (error) {
+        // エラー時の処理
+        console.error('An error happened', error);
       }
-    });
-
-    // オブジェクトをグループに追加
-    objGroup.add(object);
-
-    // オブジェクトのスケールを調整
-    const scale = 0.5 / Math.max(size.x, size.y, size.z);
-    objGroup.scale.set(scale, scale, scale);
-
-    // オブジェクトの位置を調整
-    objGroup.position.z = 0.5;
-
-    console.log('3D object loaded and set to wireframe');
-  },
-  function (xhr) {
-    // 読み込み進捗時の処理
-    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-  },
-  function (error) {
-    // エラー時の処理
-    console.error('An error happened', error);
+    );
   }
 );
 
