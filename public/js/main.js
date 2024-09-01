@@ -92,6 +92,17 @@ loader.load(
     // オブジェクトの位置を調整してセンタリング
     object.position.sub(center);
 
+    // オブジェクトのマテリアルをワイヤーフレームに変更
+    object.traverse(function (child) {
+      if (child instanceof THREE.Mesh) {
+        child.material = new THREE.MeshBasicMaterial({
+          color: 0xffffff,  // 白色
+          wireframe: true,  // ワイヤーフレーム表示を有効化
+          wireframeLinewidth: 1  // 線の太さ（一部のレンダラーでは効果がない場合があります）
+        });
+      }
+    });
+
     // オブジェクトをグループに追加
     objGroup.add(object);
 
@@ -102,7 +113,7 @@ loader.load(
     // オブジェクトの位置を調整
     objGroup.position.z = 0.5;
 
-    console.log('3D object loaded');
+    console.log('3D object loaded and set to wireframe');
   },
   function (xhr) {
     // 読み込み進捗時の処理
