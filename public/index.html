@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Three.js OBJ Viewer</title>
+    <style>
+      body { margin: 0; }
+      canvas { display: block; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.132.2/build/three.module.js",
+          "three/examples/jsm/controls/OrbitControls": "https://unpkg.com/three@0.132.2/examples/jsm/controls/OrbitControls.js",
+          "three/examples/jsm/loaders/OBJLoader": "https://unpkg.com/three@0.132.2/examples/jsm/loaders/OBJLoader.js"
+        }
+      }
+    </script>
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <canvas id="myCanvas"></canvas>
+  </body>
+</html>
