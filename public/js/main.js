@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 // サイズを指定
 const width = window.innerWidth;
@@ -72,6 +74,44 @@ async function setupVideo() {
 
 setupVideo();
 
+// OBJファイルのパス
+const objFilePath = './models/143.obj';
+
+// フォントローダーを作成
+const fontLoader = new FontLoader();
+
+// フォントを読み込む
+fontLoader.load(
+  '/fonts/helvetiker_regular.typeface.json',  // ローカルのフォントファイルへのパスに変更
+  function (font) {
+    // ファイル名を取得
+    const fileName = objFilePath.split('/').pop();
+
+    // テキストジオメトリを作成
+    const textGeometry = new TextGeometry(fileName, {
+      font: font,
+      size: 0.1,
+      height: 0.02,
+      curveSegments: 12,
+      bevelEnabled: false
+    });
+
+    // テキストマテリアルを作成
+    const textMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    // テキストメッシュを作成
+    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+    // テキストの位置を設定（左上）
+    textMesh.position.set(-0.95, 0.85, -0.5);
+
+    // テキストをシーンに追加
+    scene.add(textMesh);
+
+    console.log('Text mesh added to scene');
+  }
+);
+
 // OBJローダーを作成
 const loader = new OBJLoader();
 
@@ -80,7 +120,7 @@ scene.add(objGroup);  // グループをシーンに追加
 
 // OBJファイルを読み込む
 loader.load(
-  './models/143.obj', // OBJファイルのパス
+  objFilePath,
   function (object) {
     // 読み込み完了時の処理
 
